@@ -1,5 +1,6 @@
 import { ValueStream } from "@wonderlandlabs/looking-glass-engine";
 import SVG from "svg.js";
+import Shelf from "./Shelf";
 
 export default ({ size, width, height }) => {
   return new ValueStream("sceneManager")
@@ -42,39 +43,15 @@ export default ({ size, width, height }) => {
       try {
         if (init) {
           s.my.layers.forEach(lg => lg.remove());
-          s.do.setLayers([]);
-          const g = s.my.svg.group();
-          const r1 = g
-            .rect()
-            .attr("radius", 20)
-            .attr("fill", "black")
-            .attr("width", s.my.width * 0.4)
-            .attr("height", s.my.height * 0.4)
-            .move(s.my.width * 0.1, s.my.height * 0.1);
-          const t = g.text("width: " + s.my.width).attr("fill", "red");
-          const r2 = g
-            .rect()
-            .attr("radius", 20)
-            .attr("fill", "black")
-            .attr("width", s.my.width * 0.4)
-            .attr("height", s.my.height * 0.4)
-            .move(s.my.width * 0.5, s.my.height * 0.5);
-          s.my.layers.push({ g, r1, r2, t });
+          s.do.setLayers([
+            new Shelf(s, 0),
+            new Shelf(s, 1),
+            new Shelf(s, 2),
+            new Shelf(s, 3)
+          ]);
         } else {
-          s.my.layers.forEach(({ g, r1, r2, t }) => {
-            if (r1) {
-              r1.move(s.my.width * 0.1, s.my.height * 0.1).size(
-                s.my.width * 0.4,
-                s.my.height * 0.4
-              );
-            }
-            if (r2) {
-              r2.move(s.my.width * 0.5, s.my.height * 0.5).size(
-                s.my.width * 0.4,
-                s.my.height * 0.4
-              );
-            }
-            if (t) t.text("width: " + s.my.width);
+          s.my.layers.forEach(layer => {
+            layer.update(s);
           });
         }
       } catch (err) {

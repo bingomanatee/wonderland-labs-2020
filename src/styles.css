@@ -14,6 +14,5 @@ body,
 }
 
 svg {
-  background-color: rgba(20, 255, 20, 0.5);
-  border: 1px solid blue;
+  background-color: rgb(27, 27, 41);
 }
