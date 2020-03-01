@@ -13,7 +13,6 @@ export default class Shelf {
     console.log("shelf created: ", this.id);
     console.log("shelf color: ", this.color);
     this.init();
-    this.si = setInterval(this.tweakColor.bind(this), 30);
     this.shift = _.random(1, 10);
     this.advancing = true;
   }
@@ -46,6 +45,17 @@ export default class Shelf {
         return this.tweakColor();
       }
     }
+    this._color = null;
+    this.g.attr("fill", this.color);
+  }
+
+  cycle(value) {
+    console.log("cycling ", this, value);
+    const offset = (100 * this.index) / this.stream.my.layers.length;
+    const progress = ((value + offset) / 100) % 100;
+    const angleRad = Math.PI * 2 * progress;
+    const sin = Math.max(0, Math.sin(angleRad));
+    this._grey = Math.round(255 * sin);
     this._color = null;
     this.g.attr("fill", this.color);
   }

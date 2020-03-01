@@ -18,10 +18,14 @@ export default function App(props) {
       )
     );
     console.log("initial stream setting from props:", props);
+    stream.do.cycle();
   }, []);
 
   useEffect(() => () => {
-    if (sub) sub.unsubscribe();
+    if (sub) {
+      stream.do.setActive(false);
+      sub.unsubscribe();
+    }
   });
 
   useEffect(() => {

@@ -37,6 +37,22 @@ export default ({ size, width, height }) => {
     )
     .property("init", false, "boolean")
     .property("layers", [], "array")
+    .property("active", true, "boolean")
+    .method("cycle", (s, value) => {
+      if (!s.my.active) return;
+      if (!value || value > 100) {
+        value = 0;
+      }
+      console.log("state cycle for ", value);
+      try {
+        s.my.layers.forEach(shelf => shelf.cycle(value));
+      } catch (err) {
+        console.log("error in shelf cycle: ", err);
+      }
+      requestAnimationFrame(() => {
+        s.do.cycle(value + 1);
+      });
+    })
     .method("draw", (s, init) => {
       console.log("---- draw", init);
       if (!s.my.svg) return;
