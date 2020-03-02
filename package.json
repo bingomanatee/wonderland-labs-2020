@@ -12,6 +12,7 @@
     "react-dom": "16.12.0",
     "react-resize-detector": "4.2.1",
     "react-scripts": "3.0.1",
+    "react-sizeme": "^2.6.12",
     "svg.js": "2.7.1",
     "uuid": "7.0.1"
   },

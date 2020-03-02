@@ -1,9 +1,15 @@
 import * as u from "uuid";
 import _ from "lodash";
 import chroma from "chroma-js";
-import { homedir } from "os";
+import {homedir} from "os";
+
 const uuid = u.v4;
 console.log("--- uuid: ", uuid);
+
+const t10 = (n) => {
+  if (!(typeof n === 'number')) return 0;
+  return Math.floor(n / 10) * 10;
+}
 
 export default class Shelf {
   constructor(stream, index) {
@@ -11,7 +17,6 @@ export default class Shelf {
     this.index = index;
     this.id = uuid();
     console.log("shelf created: ", this.id);
-    console.log("shelf color: ", this.color);
     this.init();
     this.shift = _.random(1, 10);
     this.advancing = true;
@@ -19,45 +24,54 @@ export default class Shelf {
 
   get grey() {
     if (!this._grey) {
-      this._grey = _.random(this.index * 51, 255);
+      this._grey = 0;
     }
     return this._grey;
   }
 
   get color() {
-    if (!this._color) {
-      this._color = chroma(this.grey, this.grey, this.grey).hex();
-    }
-    return this._color;
+    return chroma(this.grey, this.grey, this.grey).hex();
   }
 
-  tweakColor() {
-    if (this.advancing) {
-      this._grey += this.shift;
-      if (this._grey > 255) {
-        this.advancing = !this.advancing;
-        return this.tweakColor();
-      }
-    } else {
-      this._grey -= this.shift;
-      if (this._grey < 0) {
-        this.advancing = !this.advancing;
-        return this.tweakColor();
-      }
+  get layerCount() {
+    return _.get(this, 'stream.my.layers.length', 1);
+  }
+
+  get angleOffset() {
+    return 100 * this.index / Math.max(1, this.layerCount);
+  }
+
+  get repeats() {
+    if (!this._count) {
+      this._count = 0;
     }
-    this._color = null;
-    this.g.attr("fill", this.color);
+    return this._count;
+  }
+
+  set repeats(v) {
+    this._count = v;
+  }
+
+  get phase() {
+    return Math.round((this.cyclePhase + this.angleOffset) % 100);
+  }
+
+  get angle() {
+    return Math.round(this.phase * 360 / 100);
+  }
+
+  get sin() {
+    return Math.sin((this.angle % 360)/ 360 * 2 * Math.PI) ;
   }
 
   cycle(value) {
-    console.log("cycling ", this, value);
-    const offset = (100 * this.index) / this.stream.my.layers.length;
-    const progress = ((value + offset) / 100) % 100;
-    const angleRad = Math.PI * 2 * progress;
-    const sin = Math.max(0, Math.sin(angleRad));
-    this._grey = Math.round(255 * sin);
-    this._color = null;
+    this.cyclePhase = value;
+    this._grey = Math.round(_.clamp(255 * (1 + this.sin)/2, 0, 255));
     this.g.attr("fill", this.color);
+
+   /* if (this.index === 8) {
+      this.text.text(`phase: ${this.phase}, angle: ${this.angle}, grey: ${t10(this.grey)}`)
+    }*/
   }
 
   get g() {
@@ -86,13 +100,19 @@ export default class Shelf {
           lastX = x;
         }
       });
+
+  /*    if (this.index === 8) {
+        this.text = this. g.text('stats');
+        this.text.move(200, 200);
+        this.text.attr('fill', 'red');
+      }*/
     } catch (e) {
       console.log("shelf init error: ", e);
     }
   }
 
   get gridSize() {
-    return (this.stream.my.height + this.stream.my.width) / 20;
+    return (this.stream.my.height + this.stream.my.width) / (20 - this.index);
   }
 
   get strutWidth() {
@@ -117,13 +137,15 @@ export default class Shelf {
   drawVert(height, x, lastX) {
     try {
       // strut
-      const r = this.g.rect(this.strutWidth, this.gridSize);
-      r.move(x, height);
+      const r = this.g.rect(this.strutWidth,this.gridSize - this.shelfHeight/4);
+      r.move(x, height + this.shelfHeight/2);
 
       const two = Math.random() > 0.8;
       // box
       this.makeBox(height, x, lastX, two);
-      if (two) this.makeBox(height, x, lastX, two, true);
+      if (two) {
+        this.makeBox(height, x, lastX, two, true);
+      }
     } catch (err) {
       console.log("drawVert: err", err);
     }
@@ -145,8 +167,12 @@ export default class Shelf {
     let leftGap = (availWidth - boxSize) * center;
     let rightGap = (availWidth - boxSize) * (1 - center);
 
+    const boxWidth = availWidth - (leftGap + rightGap);
+    if (boxWidth < 5) {
+      return;
+    }
     const box = this.g.rect(
-      availWidth - (leftGap + rightGap),
+      boxWidth,
       availHeight - topGap
     );
     box.move(
@@ -156,8 +182,12 @@ export default class Shelf {
   }
 
   remove() {
-    if (this.g) this.g.remove();
-    if (this.si) clearInterval(this.si);
+    if (this.g) {
+      this.g.remove();
+    }
+    if (this.si) {
+      clearInterval(this.si);
+    }
   }
 
   update(stream) {

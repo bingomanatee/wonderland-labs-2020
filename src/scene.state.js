@@ -1,10 +1,15 @@
-import { ValueStream } from "@wonderlandlabs/looking-glass-engine";
+import {ValueStream} from "@wonderlandlabs/looking-glass-engine";
 import SVG from "svg.js";
 import Shelf from "./Shelf";
+import _ from 'lodash';
 
-export default ({ size, width, height }) => {
+const PHASE = 12000;
+
+export default ({size}) => {
+  const width = _.get(size, 'width', 100);
+  const height = _.get(size, 'height', 100);
   return new ValueStream("sceneManager")
-    .property("size", size || { width: 100, height: 100 })
+    .property("size", size || {width: 100, height: 100})
     .property("width", width || 100, "number")
     .property("height", height || 100, "number")
     .property("ele", null)
@@ -20,7 +25,9 @@ export default ({ size, width, height }) => {
       "tryInit",
       s => {
         console.log("---- tryInit");
-        if (s.my.init) return;
+        if (s.my.init) {
+          return;
+        }
 
         if (!(s.my.ele && s.my.width > 100 && s.my.height > 100)) {
           console.log("init aborted - bad state");
@@ -38,24 +45,25 @@ export default ({ size, width, height }) => {
     .property("init", false, "boolean")
     .property("layers", [], "array")
     .property("active", true, "boolean")
-    .method("cycle", (s, value) => {
-      if (!s.my.active) return;
-      if (!value || value > 100) {
-        value = 0;
+    .property('cycleStart', Date.now())
+    .method("cycle", (s) => {
+      if (!s.my.active) {
+        console.log('ending cycle');
+        return;
       }
-      console.log("state cycle for ", value);
+      const value = 100 * ( (Date.now() - s.my.cycleStart) % PHASE) / PHASE;
       try {
         s.my.layers.forEach(shelf => shelf.cycle(value));
       } catch (err) {
         console.log("error in shelf cycle: ", err);
       }
-      requestAnimationFrame(() => {
-        s.do.cycle(value + 1);
-      });
+      requestAnimationFrame(s.do.cycle);
     })
     .method("draw", (s, init) => {
       console.log("---- draw", init);
-      if (!s.my.svg) return;
+      if (!s.my.svg) {
+        return;
+      }
       try {
         if (init) {
           s.my.layers.forEach(lg => lg.remove());
@@ -63,7 +71,12 @@ export default ({ size, width, height }) => {
             new Shelf(s, 0),
             new Shelf(s, 1),
             new Shelf(s, 2),
-            new Shelf(s, 3)
+            new Shelf(s, 3),
+            new Shelf(s, 4),
+            new Shelf(s, 5),
+            new Shelf(s, 6),
+            new Shelf(s, 7),
+            new Shelf(s, 8),
           ]);
         } else {
           s.my.layers.forEach(layer => {
@@ -75,18 +88,26 @@ export default ({ size, width, height }) => {
       }
     })
     .on("resize", s => {
-      if (!s.my.init) s.do.tryInit();
+      if (!s.my.init) {
+        s.do.tryInit();
+      }
       s.do.draw();
     })
     .watchFlat("size", "onSize")
     .method(
       "onSize",
       (s, size) => {
-        if (!(size && typeof size === "object")) return;
+        if (!(size && typeof size === "object")) {
+          return;
+        }
         try {
-          const { width, height } = size;
-          if (typeof width === "number") s.do.setWidth(width);
-          if (typeof height === "number") s.do.setHeight(height);
+          const {width, height} = size;
+          if (typeof width === "number") {
+            s.do.setWidth(width);
+          }
+          if (typeof height === "number") {
+            s.do.setHeight(height);
+          }
           s.emit("resize", size);
         } catch (err) {
           console.log("error in onSize: ", err);

@@ -1,4 +1,5 @@
 import React, { PureComponent } from "react";
+import _ from 'lodash';
 
 export default class Factory extends PureComponent {
   constructor(props) {
@@ -21,6 +22,7 @@ export default class Factory extends PureComponent {
   }
 
   render() {
-    return <div ref={this.ref} className="fullscreen" />;
+    return <div ref={this.ref} className="fullscreen" >
+    </div>;
   }
 }

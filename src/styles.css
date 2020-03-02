@@ -14,5 +14,9 @@ body,
 }
 
 svg {
-  background-color: rgb(27, 27, 41);
+  background-color: rgb(59, 53, 59);
+}
+
+svg rect {
+  -webkit-backface-visibility: hidden;
 }
